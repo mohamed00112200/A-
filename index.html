@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deepth Algorithm</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+      h1 {
+        color: #333;
+      }
+      .container {
+        width: 80%;
+        margin: 30px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      select,
+      button {
+        padding: 10px;
+        margin: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      input[type="text"] {
+        width: 40%;
+      }
+      .results {
+        margin-top: 20px;
+        padding: 20px;
+        background-color: #eef2f7;
+        border-radius: 8px;
+        display: none;
+      }
+      .result-item {
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        margin: 5px 0;
+      }
+      .result-item span {
+        font-weight: bold;
+      }
+      .error {
+        color: red;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Deepth Algorithm for Shortest Path</h1>
+
+    <div class="container">
+      <h3>Enter Inputs:</h3>
+      <label for="start-node">Start Node:</label>
+      <input type="text" id="start-node" placeholder="Example: S" required />
+      <br />
+
+      <label for="goal-node">Goal Node:</label>
+      <input type="text" id="goal-node" placeholder="Example: G" required />
+      <br />
+
+      <label for="goal-node">Type Algorithm</label>
+      <select id="goals" onchange="location = this.value;">
+        <option value="">Select</option>
+    
+        <option value="../Best-first.html">Best First Algorithm</option>
+        <option value="../index.html">Depth Algorithm</option>
+      </select>
+
+      <h3>Enter Edges (With Costs):</h3>
+      <textarea
+        id="graph-input"
+        rows="5"
+        cols="40"
+        placeholder="Enter edges like: S-A:5, S-B:3, A-C:2..."
+        required
+      ></textarea>
+      <br />
+
+      <button onclick="calculateDFS()">Calculate</button>
+
+      <div class="results" id="results">
+        <h3>Results:</h3>
+        <div class="result-item">
+          <span>Closed Set: {<span id="closed-set"> </span>} </span>
+        </div>
+        <div class="result-item">
+          <span>Path: </span><span id="path"></span>
+        </div>
+        <div class="result-item">
+          <span>Total Cost: </span><span id="total-cost"></span>
+        </div>
+        <div class="result-item">
+          <span>Number of Expanded Nodes:: </span><span id="expanded-nodes"></span> <span> inclucde goal</span>
+        </div>
+     
+      </div>
+    </div>
+
+    <div class="error" id="error-message"></div>
+
+    <script>
+      function parseGraphInput(input) {
+        let graph = {
+         
+        };
+
+        let edges = input.split(",");
+        console.log(edges);
+
+        edges.forEach((edge) => {
+          let [fromTo, cost] = edge.trim().split(":");
+          let [from, to] = fromTo.split("-"); 
+          if (!graph[from]) graph[from] = [];
+          graph[from].push({ to, cost: parseInt(cost) }); 
+        });
+        for (let node in graph) {
+          graph[node].sort((a, b) => a.to.localeCompare(b.to)); 
+        }
+        return graph;
+      }
+
+      function calculateDFS() {
+        const startNode = document.getElementById("start-node").value.trim();
+        const goalNode = document.getElementById("goal-node").value.trim();
+        const graphInput = document.getElementById("graph-input").value.trim();
+
+        if (!startNode || !goalNode || !graphInput) {
+          document.getElementById("error-message").innerText =
+            "Please fill all fields!";
+          return;
+        }
+
+        const graph = parseGraphInput(graphInput);
+        const result = dfsSearch(graph, startNode, goalNode);
+
+        if (result.path === null) {
+          document.getElementById("error-message").innerText = "No path found.";
+        } else {
+          document.getElementById("error-message").innerText = "";
+
+  
+          document.getElementById("path").innerText = result.path.join(" -> ");
+          document.getElementById("expanded-nodes").innerText =
+            result.expandedNodesCount;
+          document.getElementById("closed-set").innerText =
+            result.closedSet.join(", ");
+          document.getElementById("total-cost").innerText = result.totalCost;
+          document.getElementById("results").style.display = "block";
+        }
+      }
+
+      function dfsSearch(graph, start, goal) {
+        let stack = [[start, 0]];
+
+
+        let closedSet = new Set(); 
+        let expandedNodesCount = 0; 
+        let validPath = null;
+        let totalCost = 0;
+
+        while (stack.length > 0) {
+          let [path, cost] = stack.pop(); 
+          let currentNode = path[path.length - 1];
+
+          if (closedSet.has(currentNode)) continue; 
+          closedSet.add(currentNode);
+          expandedNodesCount++;
+
+          if (currentNode === goal) {
+            validPath = path;
+            totalCost = cost;
+            break;
+          }
+
+
+          if (graph[currentNode]) {
+            
+            for (let neighbor of graph[currentNode].reverse()) {
+           
+              if (!closedSet.has(neighbor.to)) {
+                stack.push([[...path, neighbor.to], cost + neighbor.cost]);
+              
+              }
+            }
+          }
+        }
+
+        if (validPath) {
+          return {
+            path: validPath,
+            expandedNodesCount: expandedNodesCount,
+            closedSet: Array.from(closedSet),
+            totalCost: totalCost,
+          };
+        } else {
+          return {
+            path: null,
+            expandedNodesCount: expandedNodesCount,
+            closedSet: Array.from(closedSet),
+            totalCost: 0,
+          };
+        }
+      }
+    </script>
+  </body>
+</html>
+<!-- 
+S-A:2,S-B:1,A-C:2,A-D:3,B-D:2,B-E:4,C-G:4,D-G:4 
+ -->
+<!-- 
+
+S-F:20,S-C:14,S-D:14,S-B:10,B-S:10,B-D:17,B-C:17,D-B:17,D-C:20,D-S:14,C-D:20,C-S:14,C-B:17,C-F:14,F-A:17,F-E:17,F-C:14,F-S:20,A-E:14,A-F:17,E-A:14,E-F:17,E-G:14
+
+ -->
+<!-- 
+ back track 
+  S-A:5,A-C:4,S-B:5,B-L:7,A-D:3,D-E:6,E-H:2,
+B-M:9,M-X:11,X-G:15
+ -->
